@@ -200,12 +200,13 @@ describe('GET /api/card', () => {
     expect(svg).toContain('data-auto-badges="true"')
     expect(svg.match(/data-badge-kind="level"/g)).toHaveLength(1)
     expect(svg).toContain('data-badge-id="github-star"')
-    expect(svg).toContain('data-badge-overflow=')
     expect(svg).not.toContain('Online — Building things')
     expect(svg).not.toContain('>GITHUB</text>')
-    expect(svg).toContain('width="874" height="662"')
+    expect(svg).toContain('width="874" height="700"')
     expect(svg).toContain('data-nebula-glow-pad="16"')
     expect(svg).toContain('filter="url(#nebula-card-glow)"')
+    expect(svg).toContain('data-badge-layout="identity"')
+    expect(svg).not.toContain('data-badge-overflow=')
   })
 
   it('uses a self-contained profile and full-bleed stats when they are not adjacent', async () => {

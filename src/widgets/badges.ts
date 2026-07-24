@@ -5,8 +5,13 @@ import type {
 } from '../data/badges.js'
 import { escapeXml } from '../lib/svg.js'
 
-const CHIP_HEIGHT = 24
-const CHIP_GAP = 6
+export const AUTOMATIC_BADGE_CHIP_HEIGHT = 24
+export const AUTOMATIC_BADGE_CHIP_GAP = 6
+export const AUTOMATIC_BADGE_ROW_GAP = 8
+
+const CHIP_HEIGHT = AUTOMATIC_BADGE_CHIP_HEIGHT
+const CHIP_GAP = AUTOMATIC_BADGE_CHIP_GAP
+const ROW_GAP = AUTOMATIC_BADGE_ROW_GAP
 const CHIP_BASE_WIDTH = 34
 const LABEL_CHARACTER_WIDTH = 6
 const OVERFLOW_BASE_WIDTH = 34
@@ -44,8 +49,10 @@ function displayWidth(display: BadgeDisplay): number {
   if (display.hiddenAchievements.length > 0) {
     widths.push(overflowWidth(display.hiddenAchievements.length))
   }
-  return widths.reduce((total, width) => total + width, 0) +
+  return (
+    widths.reduce((total, width) => total + width, 0) +
     Math.max(0, widths.length - 1) * CHIP_GAP
+  )
 }
 
 function resolveDisplay(
@@ -64,6 +71,49 @@ function resolveDisplay(
       return display
     }
     hiddenAchievements.unshift(visibleAchievements.pop()!)
+  }
+}
+
+function layoutAwardsInRows(
+  awards: readonly BadgeAward[],
+  maxWidth: number,
+): readonly (readonly BadgeAward[])[] {
+  if (awards.length === 0) return []
+
+  const rows: BadgeAward[][] = []
+  let current: BadgeAward[] = []
+  let rowWidth = 0
+
+  for (const award of awards) {
+    const width = chipWidth(award)
+    const nextWidth = current.length === 0 ? width : rowWidth + CHIP_GAP + width
+    if (current.length > 0 && nextWidth > maxWidth) {
+      rows.push(current)
+      current = [award]
+      rowWidth = width
+      continue
+    }
+    current.push(award)
+    rowWidth = nextWidth
+  }
+
+  if (current.length > 0) rows.push(current)
+  return rows
+}
+
+/** Measures wrapped badge rows when every earned award is shown. */
+export function measureAutomaticBadgeRows(options: {
+  readonly evaluation?: BadgeEvaluation
+  readonly maxWidth: number
+}): { readonly rowCount: number; readonly height: number } {
+  const awards = options.evaluation?.awards ?? []
+  if (awards.length === 0) {
+    return { rowCount: 0, height: 0 }
+  }
+  const rowCount = layoutAwardsInRows(awards, options.maxWidth).length
+  return {
+    rowCount,
+    height: rowCount * CHIP_HEIGHT + Math.max(0, rowCount - 1) * ROW_GAP,
   }
 }
 
@@ -102,11 +152,42 @@ function renderOverflow(
 </g>`
 }
 
+function renderAwardRow(
+  awards: readonly BadgeAward[],
+  fontFamily: string,
+  variant: AutomaticBadgeRenderOptions['variant'],
+  rowIndex: number,
+): string {
+  let x = 0
+  const chips = awards.map((award) => {
+    const markup = renderAward(award, x, fontFamily, variant)
+    x += chipWidth(award) + CHIP_GAP
+    return markup
+  })
+  const offsetY = rowIndex * (CHIP_HEIGHT + ROW_GAP)
+  return `<g data-badge-row="${rowIndex}" transform="translate(0 ${offsetY})">
+  ${chips.join('\n  ')}
+</g>`
+}
+
 export function renderAutomaticBadges(
   options: AutomaticBadgeRenderOptions,
 ): string {
   if (!options.evaluation) {
     return ''
+  }
+
+  if (options.layout === 'identity') {
+    const awards = options.evaluation.awards
+    if (awards.length === 0) return ''
+    const rows = layoutAwardsInRows(awards, options.maxWidth)
+    return `<g data-auto-badges="true" data-badge-layout="${options.layout}" data-badge-rows="${rows.length}" transform="translate(${options.x} ${options.y})" role="group" aria-label="Automatic GitHub badges">
+  ${rows
+    .map((row, index) =>
+      renderAwardRow(row, options.escapedFontFamily, options.variant, index),
+    )
+    .join('\n  ')}
+</g>`
   }
 
   const display = resolveDisplay(options.evaluation, options.maxWidth)

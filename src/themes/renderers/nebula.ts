@@ -1,4 +1,5 @@
 import { renderItemOutlineRect } from '../../data/outline-style.js'
+import type { BadgeEvaluation } from '../../data/badges.js'
 import { resolveSkillIconBody, resolveSkillIconName } from '../../data/skills.js'
 import {
   renderAvatarEffect,
@@ -9,7 +10,10 @@ import {
   type EffectMarkup,
 } from '../../effects/index.js'
 import { escapeXml, truncateText } from '../../lib/svg.js'
-import { renderAutomaticBadges } from '../../widgets/badges.js'
+import {
+  measureAutomaticBadgeRows,
+  renderAutomaticBadges,
+} from '../../widgets/badges.js'
 import type {
   CardSection,
   CardSectionPayload,
@@ -24,12 +28,34 @@ const PAD = 32
 const GAP = 12
 const FONT = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif"
 const BANNER_HEIGHT = 200
-const PROFILE_CONTENT_HEIGHT = BANNER_HEIGHT + 136
+const NAME_X = 168
+const HANDLE_OFFSET_Y = 57
+const BADGE_OFFSET_Y = 70
+const BIO_MIN_OFFSET_Y = 106
+const PROFILE_BOTTOM_PAD = 30
 const CARD_RADIUS = 24
 const PANEL_RADIUS = 14
 const TILE_RADIUS = 12
 /** Extra SVG margin so outer card glow/shadow is not clipped by the viewport. */
 export const NEBULA_GLOW_PAD = 16
+
+function badgeMaxWidth(width: number): number {
+  return Math.max(160, width - NAME_X - PAD)
+}
+
+function profileContentHeight(
+  width: number,
+  badgeEvaluation?: BadgeEvaluation,
+): number {
+  const rows = measureAutomaticBadgeRows({
+    evaluation: badgeEvaluation,
+    maxWidth: badgeMaxWidth(width),
+  })
+  const badgeBottom =
+    rows.height > 0 ? BADGE_OFFSET_Y + rows.height : HANDLE_OFFSET_Y
+  const bioOffset = Math.max(BIO_MIN_OFFSET_Y, badgeBottom + 18)
+  return BANNER_HEIGHT + bioOffset + PROFILE_BOTTOM_PAD
+}
 
 function renderGlowFilters(prefix: string): string {
   return `<filter id="${prefix}-card-glow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
@@ -132,7 +158,7 @@ function sectionHeight(section: CardSection, width: number): number {
 
   switch (payload.type) {
     case 'profile':
-      return PROFILE_CONTENT_HEIGHT
+      return profileContentHeight(width, payload.badgeEvaluation)
     case 'stats':
       return 126
     case 'skills': {
@@ -181,12 +207,21 @@ function renderProfile(
   const avatar = { cx: 92, cy: frame.y + BANNER_HEIGHT, radius: 52 }
   const clip = `nebula-avatar-${frame.y}`
   const bannerClip = `nebula-banner-${frame.y}`
-  const nameX = 168
+  const nameX = NAME_X
   const nameY = frame.y + BANNER_HEIGHT + 34
-  const nameWidth = Math.ceil(Array.from(name).length * 14.2)
-  const badgeGap = 14
-  const badgeX = nameX + nameWidth + badgeGap
-  const badgeMaxWidth = Math.max(160, width - PAD - badgeX)
+  const handleY = frame.y + BANNER_HEIGHT + HANDLE_OFFSET_Y
+  const badgeY = frame.y + BANNER_HEIGHT + BADGE_OFFSET_Y
+  const badgeWidth = badgeMaxWidth(width)
+  const badgeRows = measureAutomaticBadgeRows({
+    evaluation: payload.badgeEvaluation,
+    maxWidth: badgeWidth,
+  })
+  const badgeBottom =
+    badgeRows.height > 0 ? BADGE_OFFSET_Y + badgeRows.height : HANDLE_OFFSET_Y
+  const bioY =
+    frame.y +
+    BANNER_HEIGHT +
+    Math.max(BIO_MIN_OFFSET_Y, badgeBottom + 18)
   const banner = bannerGif
     ? `<defs><clipPath id="${bannerClip}"><rect x="0" y="${frame.y}" width="${width}" height="${BANNER_HEIGHT}" /></clipPath></defs>
   <image href="${escapeXml(bannerGif.dataUrl)}" x="0" y="${frame.y}" width="${width}" height="${BANNER_HEIGHT}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${bannerClip})" />
@@ -197,9 +232,9 @@ function renderProfile(
     : ''
   const badges = renderAutomaticBadges({
     evaluation: payload.badgeEvaluation,
-    x: badgeX,
-    y: nameY - 18,
-    maxWidth: badgeMaxWidth,
+    x: nameX,
+    y: badgeY,
+    maxWidth: badgeWidth,
     escapedFontFamily: escapeXml(FONT),
     layout: 'identity',
     variant: 'nebula',
@@ -218,9 +253,9 @@ ${avatarMarkup.underlay ?? ''}
     <image href="${escapeXml(profile.avatarDataUrl)}" x="${avatar.cx - avatar.radius}" y="${avatar.cy - avatar.radius}" width="${avatar.radius * 2}" height="${avatar.radius * 2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})" />
   </g>
   <text x="${nameX}" y="${nameY}" font-family="${FONT}" font-size="25" font-weight="800" fill="#f2f3f5">${escapeXml(name)}</text>
+  <text x="${nameX}" y="${handleY}" font-family="${FONT}" font-size="14" font-weight="600" fill="#949ba4">@${escapeXml(profile.login)}</text>
   ${badges}
-  <text x="${nameX}" y="${frame.y + BANNER_HEIGHT + 57}" font-family="${FONT}" font-size="14" font-weight="600" fill="#949ba4">@${escapeXml(profile.login)}</text>
-  <text x="${PAD}" y="${frame.y + BANNER_HEIGHT + 106}" font-family="${FONT}" font-size="14.5" font-style="italic" fill="#dbdee1">“${escapeXml(bio)}”</text>
+  <text x="${PAD}" y="${bioY}" font-family="${FONT}" font-size="14.5" font-style="italic" fill="#dbdee1">“${escapeXml(bio)}”</text>
 </g>
 ${avatarMarkup.overlay ?? ''}`
 }

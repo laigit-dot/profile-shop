@@ -84,7 +84,7 @@ describe('renderProfileCard effects', () => {
       svg: renderProfileCard(profile, theme, 'none', { badgeEvaluation }),
     }))
 
-    for (const { svg } of rendered) {
+    for (const { theme, svg } of rendered) {
       const awardedIds = [...svg.matchAll(/data-badge-id="([^"]+)"/g)].map(
         (match) => match[1],
       )
@@ -93,10 +93,17 @@ describe('renderProfileCard effects', () => {
       expect(svg).toContain('data-auto-badges="true"')
       expect(svg.match(/data-badge-kind="level"/g)).toHaveLength(1)
       expect(svg).toContain('data-badge-kind="achievement"')
-      expect(svg).toMatch(/data-badge-overflow="\d+"/)
       expect(svg).toContain(`d="${badgeEvaluation.level.icon.path}"`)
       expect(svg).toContain(`stroke="${badgeEvaluation.level.palette.accent}"`)
       expect(svg).toContain('<title>Recognized by the official GitHub Stars program.</title>')
+      if (theme === 'nebula') {
+        expect(svg).not.toContain('data-badge-overflow=')
+        expect(awardedIds).toEqual(badgeEvaluation.awards.map((award) => award.id))
+        expect(svg).toContain('data-badge-layout="identity"')
+        expect(svg).toContain('data-badge-rows=')
+      } else {
+        expect(svg).toMatch(/data-badge-overflow="\d+"/)
+      }
     }
   })
 
@@ -162,7 +169,7 @@ describe('renderProfileCard effects', () => {
       { badgeEvaluation },
     )
 
-    expect(svg).toContain('width="874" height="524"')
+    expect(svg).toContain('width="874" height="594"')
     expect(svg).toContain('data-theme-renderer="nebula"')
     expect(svg).toContain('data-nebula-surface="glow"')
     expect(svg).toContain('data-nebula-glow-pad="16"')
@@ -181,10 +188,12 @@ describe('renderProfileCard effects', () => {
     expect(svg).toContain('data-nebula-identity="true"')
     expect(svg).toContain('data-nebula-stat="followers"')
     expect(svg).toContain(
-      'data-auto-badges="true" data-badge-layout="identity" transform="translate(339 216)"',
+      'data-auto-badges="true" data-badge-layout="identity" data-badge-rows="3" transform="translate(168 270)"',
     )
+    expect(svg).not.toContain('data-badge-overflow=')
     expect(svg).toContain('<circle cx="92" cy="200" r="59"')
     expect(svg).toContain('x="168" y="234"')
+    expect(svg).toContain('x="168" y="257"')
     expect(svg).not.toContain('data-nebula-status')
     expect(svg).not.toContain('Online — Building things')
     expect(svg).not.toContain('>GITHUB</text>')
