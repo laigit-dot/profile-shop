@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/laigit-dot/profile-shop/security/advisories/new
+    about: Privately report suspected vulnerabilities through GitHub Security Advisories.
