@@ -18,7 +18,7 @@ export interface AutomaticBadgeRenderOptions {
   readonly maxWidth: number
   /** XML-escaped font-family attribute value supplied by the theme renderer. */
   readonly escapedFontFamily: string
-  readonly layout: 'paired' | 'solo' | 'banner'
+  readonly layout: 'paired' | 'solo' | 'identity'
   readonly variant: 'classic' | 'nebula'
 }
 
