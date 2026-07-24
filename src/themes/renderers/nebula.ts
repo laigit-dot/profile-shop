@@ -28,9 +28,25 @@ const PROFILE_CONTENT_HEIGHT = BANNER_HEIGHT + 136
 const CARD_RADIUS = 24
 const PANEL_RADIUS = 14
 const TILE_RADIUS = 12
+/** Extra SVG margin so outer card glow/shadow is not clipped by the viewport. */
+export const NEBULA_GLOW_PAD = 16
 
 function renderGlowFilters(prefix: string): string {
-  return `<filter id="${prefix}-panel-glow" x="-18%" y="-28%" width="136%" height="164%" color-interpolation-filters="sRGB">
+  return `<filter id="${prefix}-card-glow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="cardBlur" />
+      <feOffset dy="6" result="cardOffset" />
+      <feFlood flood-color="#05060a" flood-opacity="0.48" result="cardShadowColor" />
+      <feComposite in="cardShadowColor" in2="cardOffset" operator="in" result="cardShadow" />
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="cardGlowBlur" />
+      <feFlood flood-color="#a855f7" flood-opacity="0.3" result="cardGlowColor" />
+      <feComposite in="cardGlowColor" in2="cardGlowBlur" operator="in" result="cardGlow" />
+      <feMerge>
+        <feMergeNode in="cardShadow" />
+        <feMergeNode in="cardGlow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="${prefix}-panel-glow" x="-18%" y="-28%" width="136%" height="164%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="panelBlur" />
       <feOffset dy="4" result="panelOffset" />
       <feFlood flood-color="#000000" flood-opacity="0.42" result="panelShadowColor" />
@@ -166,7 +182,11 @@ function renderProfile(
   const clip = `nebula-avatar-${frame.y}`
   const bannerClip = `nebula-banner-${frame.y}`
   const nameX = 168
-  const badgeMaxWidth = Math.min(584, width - PAD * 2)
+  const nameY = frame.y + BANNER_HEIGHT + 34
+  const nameWidth = Math.ceil(Array.from(name).length * 14.2)
+  const badgeGap = 14
+  const badgeX = nameX + nameWidth + badgeGap
+  const badgeMaxWidth = Math.max(160, width - PAD - badgeX)
   const banner = bannerGif
     ? `<defs><clipPath id="${bannerClip}"><rect x="0" y="${frame.y}" width="${width}" height="${BANNER_HEIGHT}" /></clipPath></defs>
   <image href="${escapeXml(bannerGif.dataUrl)}" x="0" y="${frame.y}" width="${width}" height="${BANNER_HEIGHT}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${bannerClip})" />
@@ -177,11 +197,11 @@ function renderProfile(
     : ''
   const badges = renderAutomaticBadges({
     evaluation: payload.badgeEvaluation,
-    x: width - PAD - badgeMaxWidth,
-    y: frame.y + 22,
+    x: badgeX,
+    y: nameY - 18,
     maxWidth: badgeMaxWidth,
     escapedFontFamily: escapeXml(FONT),
-    layout: 'banner',
+    layout: 'identity',
     variant: 'nebula',
   })
 
@@ -189,7 +209,6 @@ function renderProfile(
   ${banner}
   <circle cx="${width * 0.28}" cy="${frame.y + 52}" r="${width * 0.28}" fill="#ffffff" fill-opacity="0.08" />
 </g>
-${badges}
 ${avatarMarkup.underlay ?? ''}
 <g data-nebula-identity="true" data-profile="${escapeXml(profile.login)}">
   <defs><clipPath id="${clip}"><circle cx="${avatar.cx}" cy="${avatar.cy}" r="${avatar.radius}" /></clipPath></defs>
@@ -198,7 +217,8 @@ ${avatarMarkup.underlay ?? ''}
     <circle cx="${avatar.cx}" cy="${avatar.cy}" r="55" fill="none" stroke="url(#nebula-avatar-ring)" stroke-width="5" />
     <image href="${escapeXml(profile.avatarDataUrl)}" x="${avatar.cx - avatar.radius}" y="${avatar.cy - avatar.radius}" width="${avatar.radius * 2}" height="${avatar.radius * 2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})" />
   </g>
-  <text x="${nameX}" y="${frame.y + BANNER_HEIGHT + 34}" font-family="${FONT}" font-size="25" font-weight="800" fill="#f2f3f5">${escapeXml(name)}</text>
+  <text x="${nameX}" y="${nameY}" font-family="${FONT}" font-size="25" font-weight="800" fill="#f2f3f5">${escapeXml(name)}</text>
+  ${badges}
   <text x="${nameX}" y="${frame.y + BANNER_HEIGHT + 57}" font-family="${FONT}" font-size="14" font-weight="600" fill="#949ba4">@${escapeXml(profile.login)}</text>
   <text x="${PAD}" y="${frame.y + BANNER_HEIGHT + 106}" font-family="${FONT}" font-size="14.5" font-style="italic" fill="#dbdee1">“${escapeXml(bio)}”</text>
 </g>
@@ -488,6 +508,9 @@ export function renderNebulaCard(context: ThemeRenderContext): string {
     0,
   )
   const height = contentHeight + BRANDING_FOOTER_HEIGHT
+  const pad = NEBULA_GLOW_PAD
+  const svgWidth = width + pad * 2
+  const svgHeight = height + pad * 2
   const prefix =
     effects.background === 'none'
       ? `card-nebula-${effects.card}-${effects.avatar}`
@@ -570,7 +593,7 @@ ${sectionMarkup.overlay ?? ''}
     )
     .join('')
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${context.titleId} ${context.descriptionId}" data-theme="nebula" data-theme-renderer="nebula" data-outline="${context.outline}" data-sections="${escapeXml(sections.map((section) => section.id).join(','))}" data-background-effect="${effects.background}" data-card-effect="${effects.card}" data-avatar-effect="${effects.avatar}" data-nebula-surface="glow"${context.rootData}>
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-labelledby="${context.titleId} ${context.descriptionId}" data-theme="nebula" data-theme-renderer="nebula" data-outline="${context.outline}" data-sections="${escapeXml(sections.map((section) => section.id).join(','))}" data-background-effect="${effects.background}" data-card-effect="${effects.card}" data-avatar-effect="${effects.avatar}" data-nebula-surface="glow" data-nebula-glow-pad="${pad}"${context.rootData}>
   <title id="${context.titleId}">${escapeXml(context.title)}</title>
   <desc id="${context.descriptionId}">${escapeXml(context.description)}</desc>
   <defs>
@@ -579,22 +602,24 @@ ${sectionMarkup.overlay ?? ''}
     <linearGradient id="nebula-avatar-ring" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c4a4ff" /><stop offset="100%" stop-color="#a46cff" /></linearGradient>
     <linearGradient id="nebula-support" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4b2b70" /><stop offset="100%" stop-color="#3d285e" /></linearGradient>
     ${renderGlowFilters('nebula')}
-    <clipPath id="${cardClip}"><rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${CARD_RADIUS}" ry="${CARD_RADIUS}" /></clipPath>
+    <clipPath id="${cardClip}"><rect x="0" y="0" width="${width}" height="${height}" rx="${CARD_RADIUS}" ry="${CARD_RADIUS}" /></clipPath>
     ${sectionClips}
     ${backgroundMarkup.defs ?? ''}
     ${cardMarkup.defs ?? ''}
     ${markupPart(scopedMarkups, 'defs')}
   </defs>
-  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${CARD_RADIUS}" ry="${CARD_RADIUS}" fill="url(#nebula-card)" data-nebula-card-shell="true" />
-  <g clip-path="url(#${cardClip})" data-nebula-card-content="true">
-  ${backgroundMarkup.underlay ?? ''}
-  ${cardMarkup.underlay ?? ''}
-  ${renderedSections.map((section) => section.markup).join('\n')}
-  ${cardMarkup.overlay ?? ''}
-  ${renderRepositoryBadge({
-    width,
-    height,
-  })}
+  <g transform="translate(${pad} ${pad})">
+    <rect x="0" y="0" width="${width}" height="${height}" rx="${CARD_RADIUS}" ry="${CARD_RADIUS}" fill="url(#nebula-card)" filter="url(#nebula-card-glow)" data-nebula-card-shell="true" />
+    <g clip-path="url(#${cardClip})" data-nebula-card-content="true">
+    ${backgroundMarkup.underlay ?? ''}
+    ${cardMarkup.underlay ?? ''}
+    ${renderedSections.map((section) => section.markup).join('\n')}
+    ${cardMarkup.overlay ?? ''}
+    ${renderRepositoryBadge({
+      width,
+      height,
+    })}
+    </g>
   </g>
 </svg>`
 }

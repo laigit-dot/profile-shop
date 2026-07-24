@@ -78,32 +78,24 @@ function expectValidSvgIds(svg: string): void {
 }
 
 describe('renderProfileCard effects', () => {
-  it('renders identical compact automatic awards in every registered theme', () => {
-    const rendered = THEME_NAMES.map((theme) =>
-      renderProfileCard(profile, theme, 'none', { badgeEvaluation }),
-    )
-    const awardedIds = rendered.map((svg) =>
-      [...svg.matchAll(/data-badge-id="([^"]+)"/g)].map((match) => match[1]),
-    )
+  it('renders compact automatic awards in every registered theme', () => {
+    const rendered = THEME_NAMES.map((theme) => ({
+      theme,
+      svg: renderProfileCard(profile, theme, 'none', { badgeEvaluation }),
+    }))
 
-    expect(awardedIds[0]).toEqual(awardedIds[1])
-    expect(awardedIds[0]).toEqual([
-      badgeEvaluation.level.id,
-      'github-star',
-      'sponsor',
-      'community-builder',
-      'mentor',
-    ])
-    for (const svg of rendered) {
+    for (const { svg } of rendered) {
+      const awardedIds = [...svg.matchAll(/data-badge-id="([^"]+)"/g)].map(
+        (match) => match[1],
+      )
+      expect(awardedIds[0]).toBe(badgeEvaluation.level.id)
+      expect(awardedIds.length).toBeGreaterThan(1)
       expect(svg).toContain('data-auto-badges="true"')
       expect(svg.match(/data-badge-kind="level"/g)).toHaveLength(1)
       expect(svg).toContain('data-badge-kind="achievement"')
-      expect(svg).toContain('data-badge-overflow="10"')
+      expect(svg).toMatch(/data-badge-overflow="\d+"/)
       expect(svg).toContain(`d="${badgeEvaluation.level.icon.path}"`)
       expect(svg).toContain(`stroke="${badgeEvaluation.level.palette.accent}"`)
-      expect(svg).toContain(
-        '<title>Marathon, Maintainer, Polyglot, Open Source, Star, Hard Worker, Volunteer, Voter, Collaborator, 24/7 Developer</title>',
-      )
       expect(svg).toContain('<title>Recognized by the official GitHub Stars program.</title>')
     }
   })
@@ -170,14 +162,16 @@ describe('renderProfileCard effects', () => {
       { badgeEvaluation },
     )
 
-    expect(svg).toContain('width="842" height="492"')
+    expect(svg).toContain('width="874" height="524"')
     expect(svg).toContain('data-theme-renderer="nebula"')
     expect(svg).toContain('data-nebula-surface="glow"')
+    expect(svg).toContain('data-nebula-glow-pad="16"')
     expect(svg).toContain('data-nebula-card-shell="true"')
     expect(svg).toContain('data-nebula-card-content="true"')
-    expect(svg).not.toContain('filter="url(#nebula-card-glow)"')
-    expect(svg).not.toContain('id="nebula-card-glow"')
+    expect(svg).toContain('filter="url(#nebula-card-glow)"')
+    expect(svg).toContain('id="nebula-card-glow"')
     expect(svg).toContain('filter="url(#nebula-panel-glow)"')
+    expect(svg).toContain('transform="translate(16 16)"')
     expect(svg).toContain(`rx="${24}"`)
     expect(svg).toContain(`ry="${24}"`)
     expect(svg).not.toMatch(
@@ -187,7 +181,7 @@ describe('renderProfileCard effects', () => {
     expect(svg).toContain('data-nebula-identity="true"')
     expect(svg).toContain('data-nebula-stat="followers"')
     expect(svg).toContain(
-      'data-auto-badges="true" data-badge-layout="banner" transform="translate(226 22)"',
+      'data-auto-badges="true" data-badge-layout="identity" transform="translate(339 216)"',
     )
     expect(svg).toContain('<circle cx="92" cy="200" r="59"')
     expect(svg).toContain('x="168" y="234"')

@@ -203,7 +203,9 @@ describe('GET /api/card', () => {
     expect(svg).toContain('data-badge-overflow=')
     expect(svg).not.toContain('Online — Building things')
     expect(svg).not.toContain('>GITHUB</text>')
-    expect(svg).toContain('width="842" height="630"')
+    expect(svg).toContain('width="874" height="662"')
+    expect(svg).toContain('data-nebula-glow-pad="16"')
+    expect(svg).toContain('filter="url(#nebula-card-glow)"')
   })
 
   it('uses a self-contained profile and full-bleed stats when they are not adjacent', async () => {

@@ -1092,7 +1092,7 @@ export function renderGalleryPage(origin: string): string {
     .preview img {
       display: block;
       width: 100%;
-      max-width: 842px;
+      max-width: 874px;
       height: auto;
       filter: drop-shadow(0 16px 30px rgba(20, 20, 30, 0.14));
       transition:
@@ -1116,6 +1116,12 @@ export function renderGalleryPage(origin: string): string {
       transition: box-shadow var(--dur-med) var(--ease);
     }
     .embed-head { display: flex; align-items: center; justify-content: space-between; }
+    .embed-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
     button.copy {
       border: 0;
       border-radius: 999px;
@@ -1143,10 +1149,17 @@ export function renderGalleryPage(origin: string): string {
       background: linear-gradient(145deg, oklch(0.48 0.12 155), oklch(0.4 0.1 155));
       animation: pulse-glow 0.9s var(--ease-out);
     }
-    pre {
+    #markdown {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
       margin: 0;
       padding: 12px 14px;
+      border: 1px solid transparent;
       border-radius: 10px;
+      min-height: 88px;
+      max-height: 220px;
+      resize: vertical;
       overflow: auto;
       white-space: pre-wrap;
       word-break: break-all;
@@ -1154,7 +1167,16 @@ export function renderGalleryPage(origin: string): string {
       color: oklch(0.9 0.03 160);
       font: 12px/1.55 ui-monospace, monospace;
       box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06), 0 8px 20px oklch(0.16 0.02 250 / 0.28);
-      transition: box-shadow var(--dur-med) var(--ease);
+      transition: box-shadow var(--dur-med) var(--ease), border-color var(--dur-fast) var(--ease);
+    }
+    #markdown:focus {
+      outline: none;
+      border-color: oklch(0.62 0.12 250 / 0.55);
+      box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06), 0 0 0 3px oklch(0.62 0.12 250 / 0.18);
+    }
+    #markdown.invalid {
+      border-color: oklch(0.62 0.18 25 / 0.75);
+      box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06), 0 0 0 3px oklch(0.62 0.18 25 / 0.16);
     }
     .note { color: var(--muted); font-size: .82rem; margin: 0; }
     @media (max-width: 860px) {
@@ -1314,10 +1336,11 @@ export function renderGalleryPage(origin: string): string {
         </div>
       </div>
       <div class="workspace">
-        <div class="preview" id="preview" aria-live="polite"><img id="card-img" alt="Composable GitHub card preview" width="842" /></div>
+        <div class="preview" id="preview" aria-live="polite"><img id="card-img" alt="Composable GitHub card preview" /></div>
         <div class="embed">
-          <div class="embed-head"><span class="label">${icon('<path d="M8 4h9a1 1 0 0 1 1 1v14l-5.5-3L7 19V5a1 1 0 0 1 1-1Z"/>', 13)} Markdown embed</span><button type="button" class="copy" id="copy">${icon('<path d="M8 7h9a1 1 0 0 1 1 1v11H8V7Zm-3 3h2v10a1 1 0 0 0 1 1h8v2H6a1 1 0 0 1-1-1V10Z"/>', 13)}<span data-copy-label>Copy</span></button></div>
-          <pre id="markdown"></pre>
+          <div class="embed-head"><span class="label">${icon('<path d="M8 4h9a1 1 0 0 1 1 1v14l-5.5-3L7 19V5a1 1 0 0 1 1-1Z"/>', 13)} Embed code</span><button type="button" class="copy" id="copy">${icon('<path d="M8 7h9a1 1 0 0 1 1 1v11H8V7Zm-3 3h2v10a1 1 0 0 0 1 1h8v2H6a1 1 0 0 1-1-1V10Z"/>', 13)}<span data-copy-label>Copy</span></button></div>
+          <p class="embed-hint">Settings update this code. Paste an <code>&lt;img&gt;</code>, markdown image, or card URL here to sync settings back.</p>
+          <textarea id="markdown" spellcheck="false" autocomplete="off" aria-label="Card embed code"></textarea>
         </div>
       </div>
     </section>
@@ -1350,6 +1373,12 @@ export function renderGalleryPage(origin: string): string {
     outline: ${JSON.stringify(DEFAULT_OUTLINE_STYLE)},
     effects: { background: "none", card: "none", avatar: "pulse", stats: "none", skills: "none", projects: "none", contributions: "none", contact: "none", donate: "none", giphy: "none" }
   };
+  const defaultContact = ${JSON.stringify(DEFAULT_CONTACT)};
+  const defaultDonate = ${JSON.stringify(DEFAULT_DONATE)};
+  const sectionIds = new Set(catalogs.sections.map((option) => option.id));
+  const skillIds = new Set(catalogs.skills.map((option) => option.id));
+  const themeIds = new Set(catalogs.themes.map((option) => option.id));
+  const outlineIds = new Set(catalogs.outlines.map((option) => option.id));
   const image = document.getElementById("card-img");
   const preview = document.getElementById("preview");
   const output = document.getElementById("markdown");
@@ -1361,6 +1390,8 @@ export function renderGalleryPage(origin: string): string {
   const SEARCH_DEBOUNCE_MS = 320;
   let refreshTimer = 0;
   let openSelect = null;
+  let embedApplying = false;
+  let embedDirty = false;
 
   function scheduleRefresh(delay = INPUT_DEBOUNCE_MS) {
     clearTimeout(refreshTimer);
@@ -1467,13 +1498,260 @@ export function renderGalleryPage(origin: string): string {
     labelsToggle.textContent = state.labels ? "Hide labels" : "Show labels";
   }
 
+  function formatEmbed(url) {
+    return '<img\\n  src="' + url + '"\\n  alt="GitHub card"\\n/>';
+  }
+
+  function decodeEmbedEntities(value) {
+    return String(value)
+      .replaceAll("&amp;", "&")
+      .replaceAll("&quot;", '"')
+      .replaceAll("&#39;", "'")
+      .replaceAll("&lt;", "<")
+      .replaceAll("&gt;", ">");
+  }
+
+  function extractEmbedUrl(text) {
+    const trimmed = String(text || "").trim();
+    if (!trimmed) return null;
+    const imgQuoted = trimmed.match(/<img\\b[^>]*\\bsrc\\s*=\\s*["']([^"']+)["'][^>]*>/i);
+    if (imgQuoted) return decodeEmbedEntities(imgQuoted[1].trim());
+    const imgBare = trimmed.match(/<img\\b[^>]*\\bsrc\\s*=\\s*([^\\s>]+)/i);
+    if (imgBare) return decodeEmbedEntities(imgBare[1].trim());
+    const srcAttr = trimmed.match(/\\bsrc\\s*=\\s*["']([^"']+)["']/i);
+    if (srcAttr) return decodeEmbedEntities(srcAttr[1].trim());
+    const markdown = trimmed.match(/!\\[[^\\]]*\\]\\(([^)\\s]+)\\)/);
+    if (markdown) return decodeEmbedEntities(markdown[1].trim());
+    const absolute = trimmed.match(/https?:\\/\\/[^\\s"'<>]+/i);
+    if (absolute) return decodeEmbedEntities(absolute[0].replace(/[),.;]+$/, ""));
+    const relative = trimmed.match(/\\/api\\/(?:card|profile|skills)\\?[^\\s"'<>]*/i);
+    if (relative) return decodeEmbedEntities(relative[0].replace(/[),.;]+$/, ""));
+    return null;
+  }
+
+  function parsePlatformMap(raw, defaults) {
+    const next = {};
+    for (const [id, row] of Object.entries(defaults)) {
+      next[id] = { on: false, value: row.value || "" };
+    }
+    if (!raw) return next;
+    for (const part of raw.split(",")) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const splitAt = trimmed.indexOf(":");
+      if (splitAt <= 0) continue;
+      const id = trimmed.slice(0, splitAt).trim().toLowerCase();
+      const value = trimmed.slice(splitAt + 1).trim();
+      if (!Object.prototype.hasOwnProperty.call(next, id) || !value) continue;
+      next[id] = { on: true, value };
+    }
+    return next;
+  }
+
+  function allowedEffect(scope, name) {
+    return !!catalogs.effects[scope]?.some((option) => option.id === name);
+  }
+
+  function resetEffects() {
+    state.effects = {
+      background: "none",
+      card: "none",
+      avatar: "none",
+      stats: "none",
+      skills: "none",
+      projects: "none",
+      contributions: "none",
+      contact: "none",
+      donate: "none",
+      giphy: "none"
+    };
+  }
+
+  function applyEffectsParam(raw) {
+    resetEffects();
+    if (!raw) return;
+    for (const assignment of raw.split(",")) {
+      const trimmed = assignment.trim();
+      if (!trimmed) continue;
+      const [scope, name, extra] = trimmed.split(":");
+      if (!scope || !name || extra !== undefined) continue;
+      const effectScope = scope.trim().toLowerCase();
+      const effectName = name.trim().toLowerCase();
+      if (!allowedEffect(effectScope, effectName)) continue;
+      state.effects[effectScope] = effectName;
+    }
+  }
+
+  function applyCardParams(params, route) {
+    if (route === "profile") {
+      state.sections = ["profile", "stats"];
+      const username = (params.get("username") || "").trim().toLowerCase();
+      if (username) state.username = username;
+      const theme = (params.get("theme") || "").trim().toLowerCase();
+      if (themeIds.has(theme)) state.theme = theme;
+      resetEffects();
+      const effect = (params.get("effect") || "").trim().toLowerCase();
+      if (allowedEffect("avatar", effect)) state.effects.avatar = effect;
+      const bannerGiphy = (params.get("bannerGiphy") || "").trim();
+      state.bannerGiphy = bannerGiphy;
+      state.bannerGiphyLabel = bannerGiphy;
+      state.bannerGiphyPreview = "";
+      return true;
+    }
+
+    if (route === "skills") {
+      state.sections = ["skills"];
+      const skills = [...new Set((params.get("skills") || "")
+        .split(",")
+        .map((skill) => skill.trim().toLowerCase())
+        .filter((skill) => skillIds.has(skill)))]
+        .slice(0, maxSkills);
+      if (skills.length) state.skills = new Set(skills);
+      const theme = (params.get("theme") || "").trim().toLowerCase();
+      if (themeIds.has(theme)) state.theme = theme;
+      const outline = (params.get("outline") || "").trim().toLowerCase();
+      if (outlineIds.has(outline)) state.outline = outline;
+      const labels = (params.get("labels") || "").trim().toLowerCase();
+      state.labels = !(labels === "false" || labels === "0");
+      resetEffects();
+      return true;
+    }
+
+    const sections = [...new Set((params.get("sections") || "profile,stats")
+      .split(",")
+      .map((section) => section.trim().toLowerCase())
+      .filter((section) => sectionIds.has(section)))];
+    if (!sections.length) return false;
+    state.sections = sections;
+
+    const username = (params.get("username") || "").trim().toLowerCase();
+    if (username) state.username = username;
+
+    if (sections.includes("skills")) {
+      const skills = [...new Set((params.get("skills") || "")
+        .split(",")
+        .map((skill) => skill.trim().toLowerCase())
+        .filter((skill) => skillIds.has(skill)))]
+        .slice(0, maxSkills);
+      state.skills = new Set(skills.length ? skills : ${JSON.stringify([...DEFAULT_SKILLS])});
+      const labels = (params.get("labels") || "").trim().toLowerCase();
+      state.labels = !(labels === "false" || labels === "0");
+    }
+
+    if (sections.includes("contact")) {
+      state.contact = parsePlatformMap(params.get("contact"), defaultContact);
+    }
+    if (sections.includes("donate")) {
+      state.donate = parsePlatformMap(params.get("donate"), defaultDonate);
+    }
+    if (sections.includes("giphy")) {
+      const giphy = (params.get("giphy") || "").trim() || "coding";
+      state.giphy = giphy;
+      state.giphyLabel = giphy;
+      state.giphyPreview = "";
+    }
+
+    const theme = (params.get("theme") || "").trim().toLowerCase();
+    state.theme = themeIds.has(theme) ? theme : "default";
+    const outline = (params.get("outline") || "").trim().toLowerCase();
+    state.outline = outlineIds.has(outline) ? outline : ${JSON.stringify(DEFAULT_OUTLINE_STYLE)};
+
+    const bannerGiphy = (params.get("bannerGiphy") || "").trim();
+    state.bannerGiphy = bannerGiphy;
+    state.bannerGiphyLabel = bannerGiphy;
+    state.bannerGiphyPreview = "";
+
+    applyEffectsParam(params.get("effects"));
+    return true;
+  }
+
+  function applyEmbedUrl(rawUrl) {
+    let parsed;
+    try {
+      parsed = new URL(rawUrl, origin);
+    } catch {
+      return false;
+    }
+    const path = parsed.pathname.replace(/\\/+$/, "") || "/";
+    let route = "";
+    if (path.endsWith("/api/card")) route = "card";
+    else if (path.endsWith("/api/profile")) route = "profile";
+    else if (path.endsWith("/api/skills")) route = "skills";
+    else return false;
+    return applyCardParams(parsed.searchParams, route);
+  }
+
+  function syncControlsFromState() {
+    const usernameInput = document.getElementById("username");
+    if (usernameInput && usernameInput.value !== state.username) {
+      usernameInput.value = state.username;
+    }
+    document.getElementById("sections-select")?._syncSearchSelect?.();
+    document.getElementById("theme-select")?._syncSearchSelect?.();
+    document.getElementById("outline-select")?._syncSearchSelect?.();
+    for (const scope of Object.keys(catalogs.effects)) {
+      document.getElementById("effect-" + scope)?._syncSearchSelect?.();
+    }
+    renderSkillsPicker();
+    document.querySelectorAll("[data-platform-kind]").forEach((row) => {
+      const kind = row.dataset.platformKind;
+      const id = row.dataset.platform;
+      const entry = state[kind]?.[id];
+      if (!entry) return;
+      const toggle = row.querySelector("[data-platform-toggle]");
+      const input = row.querySelector("[data-platform-value]");
+      toggle?.classList.toggle("on", entry.on);
+      row.classList.toggle("on", entry.on);
+      toggle?.setAttribute("aria-pressed", String(entry.on));
+      if (input && input.value !== entry.value) input.value = entry.value;
+    });
+    document.getElementById("giphy-picker")?._syncGiphy?.();
+    document.getElementById("banner-giphy-picker")?._syncGiphy?.();
+  }
+
+  function applyFromEmbedText(text, { normalize = false } = {}) {
+    if (!embedDirty) {
+      if (normalize) {
+        const next = formatEmbed(cardUrl());
+        if (output.value !== next) output.value = next;
+        output.classList.remove("invalid");
+        output.removeAttribute("aria-invalid");
+      }
+      return true;
+    }
+    const url = extractEmbedUrl(text);
+    if (!url || !applyEmbedUrl(url)) {
+      output.classList.add("invalid");
+      output.setAttribute("aria-invalid", "true");
+      return false;
+    }
+    output.classList.remove("invalid");
+    output.removeAttribute("aria-invalid");
+    embedApplying = true;
+    embedDirty = false;
+    syncControlsFromState();
+    refresh();
+    embedApplying = false;
+    if (normalize) {
+      const next = formatEmbed(cardUrl());
+      if (output.value !== next) output.value = next;
+    }
+    return true;
+  }
+
   function refresh() {
     syncVisibility();
     const url = cardUrl();
     preview.classList.add("loading");
     image.onload = image.onerror = () => preview.classList.remove("loading");
     image.src = url;
-    output.textContent = '<img\\n  src="' + url + '"\\n/>';
+    if (!embedApplying && document.activeElement !== output) {
+      const next = formatEmbed(url);
+      if (output.value !== next) output.value = next;
+      embedDirty = false;
+      output.classList.remove("invalid");
+      output.removeAttribute("aria-invalid");
+    }
   }
 
   function getMenu(root) {
@@ -2048,6 +2326,7 @@ export function renderGalleryPage(origin: string): string {
     });
 
     syncSelected();
+    picker._syncGiphy = syncSelected;
   }
 
   mountGiphyPicker({
@@ -2092,9 +2371,29 @@ export function renderGalleryPage(origin: string): string {
     });
   });
 
+  const scheduleEmbedApply = debounce(() => {
+    applyFromEmbedText(output.value);
+  }, INPUT_DEBOUNCE_MS);
+
+  output.addEventListener("input", () => {
+    embedDirty = true;
+    scheduleEmbedApply();
+  });
+  output.addEventListener("blur", () => {
+    scheduleEmbedApply.cancel();
+    applyFromEmbedText(output.value, { normalize: true });
+  });
+  output.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      scheduleEmbedApply.cancel();
+      applyFromEmbedText(output.value, { normalize: true });
+    }
+  });
+
   document.getElementById("copy").addEventListener("click", async (event) => {
     const button = event.currentTarget;
-    await navigator.clipboard.writeText(output.textContent || "");
+    await navigator.clipboard.writeText(output.value || "");
     const label = button.querySelector("[data-copy-label]");
     button.classList.add("copied");
     if (label) label.textContent = "Copied";
