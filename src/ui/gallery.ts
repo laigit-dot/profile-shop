@@ -1473,7 +1473,7 @@ export function renderGalleryPage(origin: string): string {
     preview.classList.add("loading");
     image.onload = image.onerror = () => preview.classList.remove("loading");
     image.src = url;
-    output.textContent = "![GitHub card](" + url + ")";
+    output.textContent = '<img\\n  src="' + url + '"\\n/>';
   }
 
   function getMenu(root) {

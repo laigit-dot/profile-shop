@@ -24,6 +24,8 @@ describe('application smoke tests', () => {
     expect(body).toContain('function scheduleRefresh')
     expect(body).toContain('function debounce')
     expect(body).toContain('const INPUT_DEBOUNCE_MS = 450')
+    expect(body).toContain('<img\\n  src="\' + url + \'"\\n/>')
+    expect(body).not.toContain('![GitHub card](')
     expect(body).toContain('/api/giphy/search')
     expect(body).toContain('/api/profile')
     expect(body).toContain('/api/skills')
