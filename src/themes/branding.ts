@@ -1,6 +1,6 @@
 export const BRANDING_FOOTER_HEIGHT = 30
 export const GITHUB_DECO_REPOSITORY_URL =
-  'https://github.com/kohit-z/profile-card-shop'
+  'https://github.com/laigit-dot/profile-shop'
 
 interface RepositoryBadgeOptions {
   readonly width: number

@@ -2,6 +2,9 @@
 
 Embeddable SVG profile cards for GitHub Markdown. Compose profile, stats, skills, pinned projects, a contribution graph, contact, donation options, and a custom Giphy GIF into one image, then style it with themes and effects.
 
+GitHub Deco is an independent, unofficial community project. It is not
+affiliated with, sponsored by, or endorsed by GitHub or Giphy.
+
 ## Embed a card
 
 Drop this into your README and swap in your username, sections, and options:
@@ -24,7 +27,7 @@ Skills only:
 
 ## Customize with `/api/card`
 
-`GET /api/card` returns one SVG assembled from ordered sections.image.png
+`GET /api/card` returns one SVG assembled from ordered sections.
 
 | Parameter | Required | Description |
 | --- | --- | --- |
@@ -219,3 +222,63 @@ Older single-purpose URLs still work:
 - `/api/skills?skills=typescript,react,nodejs&theme=nebula&labels=true&iconTheme=brand` — skills card
 
 Prefer `/api/card` for new embeds so you can mix sections and target effects independently.
+
+## Development
+
+GitHub Deco requires a supported Node.js release, currently Node.js 22.12 or
+newer. The included `.nvmrc` selects Node.js 24.
+
+```sh
+npm ci
+cp .env.example .env
+npm run dev
+```
+
+Use personal, least-privilege development credentials in `.env`. Never commit
+that file or reuse production credentials locally.
+
+## Testing
+
+Run the complete local quality suite:
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+## Self-hosting
+
+Set `GITHUB_TOKEN` and `GIPHY_API_KEY` in the deployment environment; do not
+embed either key in client-side code or generated URLs. Operators are
+responsible for deployment security, caching, request controls, and compliance
+with GitHub's and Giphy's current API terms, quotas, and rate limits. Giphy
+content and integrations must follow Giphy's current branding and attribution
+requirements; consult Giphy's published terms rather than relying on this
+README as legal guidance.
+
+## Contributing and community
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch, testing, and pull
+request guidance. Participation is governed by the
+[Contributor Covenant](CODE_OF_CONDUCT.md), and project decisions follow
+[GOVERNANCE.md](GOVERNANCE.md). Release changes are tracked in
+[CHANGELOG.md](CHANGELOG.md) and published according to
+[RELEASING.md](RELEASING.md).
+
+Report confirmed bugs and propose features through
+[GitHub Issues](https://github.com/laigit-dot/profile-shop/issues). Do not use
+public issues for suspected vulnerabilities; follow [SECURITY.md](SECURITY.md)
+instead.
+
+## Security
+
+Do not report vulnerabilities in public issues. Follow
+[SECURITY.md](SECURITY.md) to submit a private GitHub Security Advisory.
+
+## License
+
+GitHub Deco is available under the [MIT License](LICENSE). Third-party
+dependencies, icons, brands, remote content, and design artifacts are covered
+by their own terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

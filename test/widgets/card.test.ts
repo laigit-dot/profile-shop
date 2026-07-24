@@ -6,7 +6,6 @@ import { AVATAR_EFFECT_NAMES } from '../../src/effects'
 import type { GitHubProfile } from '../../src/services/github'
 import {
   BRANDING_FOOTER_HEIGHT,
-  GITHUB_DECO_REPOSITORY_URL,
 } from '../../src/themes/branding'
 import { THEME_NAMES } from '../../src/themes'
 import {
@@ -190,7 +189,9 @@ describe('renderCard', () => {
 
       expect(svg).toContain('data-github-deco-branding="true"')
       expect(svg).toContain('data-github-deco-star="true"')
-      expect(svg).toContain(`href="${GITHUB_DECO_REPOSITORY_URL}"`)
+      expect(svg).toContain(
+        'href="https://github.com/laigit-dot/profile-shop"',
+      )
       expect(svg).toContain('fill-opacity="0.68"')
       expect(svg).not.toContain('>laiger</text>')
     },

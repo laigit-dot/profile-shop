@@ -1,17 +1,27 @@
 {
   "name": "github-deco",
   "version": "0.1.0",
+  "description": "Embeddable SVG profile cards for GitHub Markdown",
+  "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laigit-dot/profile-shop.git"
+  },
+  "homepage": "https://github.com/laigit-dot/profile-shop#readme",
+  "bugs": {
+    "url": "https://github.com/laigit-dot/profile-shop/issues"
+  },
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "tsx watch src/dev.ts",
     "lint": "oxlint src test",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "npm run typecheck && rm -rf dist && esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --sourcemap --outfile=dist/index.js"
+    "build": "npm run typecheck && rm -rf dist && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --sourcemap --outfile=dist/index.js"
   },
   "dependencies": {
     "@iconify-json/skill-icons": "^1.2.4",

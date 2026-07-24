@@ -1,0 +1,66 @@
+name: Feature request
+description: Suggest an improvement to GitHub Deco
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Explain the need before prescribing an implementation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or need
+      description: What problem, limitation, or user need would this address?
+      placeholder: Describe the use case and who benefits.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe the behavior or result you would like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or alternative designs have you considered?
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: API and backward-compatibility considerations
+      description: Note any endpoint, query parameter, output, configuration, or migration impact. Write "None known" if not applicable.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Willingness to contribute
+      description: Would you be willing to help implement this after the scope is agreed?
+      options:
+        - "Yes"
+        - "Maybe, with guidance"
+        - "No"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues for a similar request.
+          required: true
+        - label: I have not included secrets or private data.
+          required: true
