@@ -1356,8 +1356,35 @@ export function renderGalleryPage(origin: string): string {
   const skillCount = document.getElementById("skill-count");
   const sectionCount = document.getElementById("section-count");
   const labelsToggle = document.getElementById("toggle-labels");
-  let timer = 0;
+  const INPUT_DEBOUNCE_MS = 450;
+  const FILTER_DEBOUNCE_MS = 180;
+  const SEARCH_DEBOUNCE_MS = 320;
+  let refreshTimer = 0;
   let openSelect = null;
+
+  function scheduleRefresh(delay = INPUT_DEBOUNCE_MS) {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(refresh, delay);
+  }
+
+  function flushRefresh() {
+    clearTimeout(refreshTimer);
+    refresh();
+  }
+
+  function debounce(fn, delay) {
+    let timerId = 0;
+    const run = (...args) => {
+      clearTimeout(timerId);
+      timerId = setTimeout(() => fn(...args), delay);
+    };
+    run.flush = (...args) => {
+      clearTimeout(timerId);
+      fn(...args);
+    };
+    run.cancel = () => clearTimeout(timerId);
+    return run;
+  }
 
   function serializePlatforms(map) {
     return Object.entries(map)
@@ -1635,17 +1662,22 @@ export function renderGalleryPage(origin: string): string {
       openMenu(root);
       renderMenu();
     });
-    input.addEventListener("input", () => {
+    const scheduleMenuFilter = debounce(() => {
       openMenu(root);
       renderValue();
       renderMenu();
+    }, FILTER_DEBOUNCE_MS);
+    input.addEventListener("input", () => {
+      scheduleMenuFilter();
     });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        scheduleMenuFilter.cancel();
         closeSelect(root);
         input.blur();
       }
       if (event.key === "Enter") {
+        scheduleMenuFilter.flush();
         const first = menu.querySelector("[data-option]");
         if (first) {
           event.preventDefault();
@@ -1775,21 +1807,32 @@ export function renderGalleryPage(origin: string): string {
     }).join("");
   }
 
-  skillsFilter.addEventListener("input", renderSkillsPicker);
+  const scheduleSkillsFilter = debounce(renderSkillsPicker, FILTER_DEBOUNCE_MS);
+  skillsFilter.addEventListener("input", () => {
+    scheduleSkillsFilter();
+  });
+  skillsFilter.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") scheduleSkillsFilter.flush();
+  });
+  skillsFilter.addEventListener("blur", () => {
+    scheduleSkillsFilter.flush();
+  });
   skillsGrid.addEventListener("click", (event) => {
     const button = event.target.closest("[data-skill]");
     if (!button) return;
     const id = button.dataset.skill;
     if (state.skills.has(id)) state.skills.delete(id);
     else if (state.skills.size < maxSkills) state.skills.add(id);
+    scheduleSkillsFilter.cancel();
     renderSkillsPicker();
-    refresh();
+    flushRefresh();
   });
   clearSkills.addEventListener("click", () => {
     if (!state.skills.size) return;
     state.skills.clear();
+    scheduleSkillsFilter.cancel();
     renderSkillsPicker();
-    refresh();
+    flushRefresh();
   });
   renderSkillsPicker();
 
@@ -1842,8 +1885,13 @@ export function renderGalleryPage(origin: string): string {
     const githubSponsors = document.querySelector('[data-platform-kind="donate"][data-platform="github-sponsors"] [data-platform-value]');
     if (githubContact) githubContact.value = linkedUsername;
     if (githubSponsors) githubSponsors.value = linkedUsername;
-    clearTimeout(timer);
-    timer = setTimeout(refresh, 300);
+    scheduleRefresh();
+  });
+  document.getElementById("username").addEventListener("blur", () => {
+    flushRefresh();
+  });
+  document.getElementById("username").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") flushRefresh();
   });
 
   function escapeAttr(value) {
@@ -1943,7 +1991,7 @@ export function renderGalleryPage(origin: string): string {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         searchCandidates(input.value);
-      }, 280);
+      }, SEARCH_DEBOUNCE_MS);
     }
 
     function pick(idValue, title, previewUrl) {
@@ -2030,12 +2078,17 @@ export function renderGalleryPage(origin: string): string {
       toggle.classList.toggle("on", state[kind][id].on);
       row.classList.toggle("on", state[kind][id].on);
       toggle.setAttribute("aria-pressed", String(state[kind][id].on));
-      refresh();
+      flushRefresh();
     });
     input.addEventListener("input", (event) => {
       state[kind][id].value = event.target.value;
-      clearTimeout(timer);
-      timer = setTimeout(refresh, 300);
+      scheduleRefresh();
+    });
+    input.addEventListener("blur", () => {
+      flushRefresh();
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") flushRefresh();
     });
   });
 

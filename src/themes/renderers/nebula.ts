@@ -30,21 +30,7 @@ const PANEL_RADIUS = 14
 const TILE_RADIUS = 12
 
 function renderGlowFilters(prefix: string): string {
-  return `<filter id="${prefix}-card-glow" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="cardBlur" />
-      <feOffset dy="8" result="cardOffset" />
-      <feFlood flood-color="#05060a" flood-opacity="0.55" result="cardShadowColor" />
-      <feComposite in="cardShadowColor" in2="cardOffset" operator="in" result="cardShadow" />
-      <feGaussianBlur in="SourceAlpha" stdDeviation="16" result="cardGlowBlur" />
-      <feFlood flood-color="#a855f7" flood-opacity="0.34" result="cardGlowColor" />
-      <feComposite in="cardGlowColor" in2="cardGlowBlur" operator="in" result="cardGlow" />
-      <feMerge>
-        <feMergeNode in="cardShadow" />
-        <feMergeNode in="cardGlow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-    <filter id="${prefix}-panel-glow" x="-18%" y="-28%" width="136%" height="164%" color-interpolation-filters="sRGB">
+  return `<filter id="${prefix}-panel-glow" x="-18%" y="-28%" width="136%" height="164%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="panelBlur" />
       <feOffset dy="4" result="panelOffset" />
       <feFlood flood-color="#000000" flood-opacity="0.42" result="panelShadowColor" />
@@ -599,7 +585,7 @@ ${sectionMarkup.overlay ?? ''}
     ${cardMarkup.defs ?? ''}
     ${markupPart(scopedMarkups, 'defs')}
   </defs>
-  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${CARD_RADIUS}" ry="${CARD_RADIUS}" fill="url(#nebula-card)" filter="url(#nebula-card-glow)" data-nebula-card-shell="true" />
+  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${CARD_RADIUS}" ry="${CARD_RADIUS}" fill="url(#nebula-card)" data-nebula-card-shell="true" />
   <g clip-path="url(#${cardClip})" data-nebula-card-content="true">
   ${backgroundMarkup.underlay ?? ''}
   ${cardMarkup.underlay ?? ''}
