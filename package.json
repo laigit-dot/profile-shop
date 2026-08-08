@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@iconify-json/skill-icons": "^1.2.4",
-    "hono": "^4.12.32",
+    "hono": "^4.13.1",
     "simple-icons": "^16.27.0"
   },
   "devDependencies": {
