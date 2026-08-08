@@ -25,15 +25,15 @@
   },
   "dependencies": {
     "@iconify-json/skill-icons": "^1.2.4",
-    "hono": "^4.12.32",
-    "simple-icons": "^16.27.0"
+    "hono": "^4.13.0",
+    "simple-icons": "^16.28.0"
   },
   "devDependencies": {
-    "@hono/node-server": "^2.0.11",
-    "@types/node": "^26.1.1",
+    "@hono/node-server": "^2.1.0",
+    "@types/node": "^26.1.2",
     "esbuild": "^0.28.1",
-    "oxlint": "^1.75.0",
-    "tsx": "^4.23.1",
+    "oxlint": "^1.77.0",
+    "tsx": "^4.23.5",
     "typescript": "~6.0.3",
     "vitest": "^4.1.10"
   }
