@@ -34,7 +34,7 @@
     "esbuild": "^0.28.2",
     "oxlint": "^1.78.0",
     "tsx": "^4.23.12",
-    "typescript": "~6.0.3",
+    "typescript": "~7.0.2",
     "vitest": "^4.1.10"
   }
 }
